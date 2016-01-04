@@ -78,7 +78,7 @@ ChURL.prototype = {
                 resp.data = JSON.parse(resp.responseText);
             }
 
-            console.log('background got response', resp);
+            console.log('ChURL got response', resp);
 
             resp.tabId = tabId;
 
@@ -87,10 +87,17 @@ ChURL.prototype = {
                 msg: 'CURL::gotResponce',
                 data: resp,
                 tabId: tabId,
-                from: 'background'
+                from: 'ChURL'
             };
 
-            page.notifyDevtools(messageData);
+            if (typeof page !== 'undefined' && undefined !== page) {
+                page.notifyDevtools(messageData);
+            //}
+            //else {
+            //    console.log('Response should be sent to devTools', messageData);
+
+            }
+
         }
     }
 };

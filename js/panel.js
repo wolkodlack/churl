@@ -133,8 +133,9 @@ function sendRequest() {
             postPutData = $("#postputdata").val();
 
         var msgData = {url: url, data: postPutData, method: method, headers: $("#headers").val()};
-        panelLog('panel::sendRequest() '+ url );
-        contentConsoleLog('panel::sendRequest() <'+ url+ '>', msgData );
+        var msg = 'panel::sendRequest('+ initialPage + ')';
+        panelLog(msg +  url );
+        contentConsoleLog(msg + ' <'+ url+ '>', msgData );
 
         // Executing function from devtools.js
         var r = false;

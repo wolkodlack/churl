@@ -95,12 +95,13 @@ var devPanelCallback = function (extensionPanel) {
             port.postMessage(msg);
         };
 
-        _window.doRequest = function (fromPage, method, url, headers, data) {
+        _window.doRequest = function (initiator, method, url, headers, data) {
             _log('_window.doRequest', arguments);
 
             var requestData = {
+                initiator: initiator,
                 command: "sendRequest",
-                page: fromPage,
+
                 method: method,
                 url: url,
                 headers: headers,

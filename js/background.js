@@ -26,11 +26,21 @@ Background.prototype = {
 
 
         if(message.command === 'log') {
-            console.log(message.from + '::' +message.msg, message);
+            var data = message.data;
+            console.log(message.from + '::' +message.msg, data);
+
         }
-        else if(message.command === 'sendRequest') {
-            var curl = new CURL();
-            curl.doRequest(
+        else if('gotResponce' == message.command) {
+            console.info('Forwarding to devtools ...', message);
+            this.notifyDevtools(message);
+        }
+        else if(message.initiator === 'content') {
+            console.log('Forwarding to content script...');
+            this.sendToContent(message);
+        }
+        else if(message.command === 'sendRequest' && message.initiator === 'background') {
+            var churl = new ChURL();
+            churl.doRequest(
                 message.method,
                 message.url,
                 message.headers,
@@ -80,9 +90,9 @@ Background.prototype = {
     sendToContent: function(data) {
         chrome.tabs.query({'active': true,'currentWindow': true},
             function (tabs) {
-                console.log('background::sendToContent()', tabs);
                 // Send message to content script
                 if (tabs[0]) {
+                    console.log('background::sendToContent()', data);
                     chrome.tabs.sendMessage(tabs[0].id, data);
                 }
             }
