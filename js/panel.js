@@ -342,7 +342,7 @@ ChURLPage.prototype = {
             this.initPort();
         }
 
-        this.senderType = (undefined !== window.doRequest)?'devtools':'page';
+        this.senderType = (undefined === chrome.tabs)?'devtools':'page';
         if(this.senderType==='page') {
             // TODO: Content request is not available. No content script are given
             $('label[for=content]').css('display', 'none');
