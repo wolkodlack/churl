@@ -21,6 +21,7 @@ Content.prototype = {
                 message.url,
                 message.headers,
                 message.data,
+                message.senderType,
                 message.tabId
             );
             sendResponse('Request is sent');
@@ -31,7 +32,7 @@ Content.prototype = {
         }
     },
 
-    notifyDevtools: function(data) {
+    notifyDevtools: function(data, tabId    ) {
         console.log('Content::notifyDevtools()', data);
         chrome.runtime.sendMessage(data);
 
@@ -45,3 +46,5 @@ Content.prototype = {
 };
 
 var page = new Content();
+
+

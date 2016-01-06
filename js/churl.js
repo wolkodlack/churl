@@ -16,11 +16,14 @@ ChURL.prototype = {
      * @param {String} headers
      * @param {String} data
      */
-    doRequest: function(method, url, headers, data, tabId) {
+    doRequest: function(method, url, headers, data, senderType, tabId) {
         console.log('background::CURL::doRequest()', arguments);
         var xlr = new XMLHttpRequest;
         var _this = this;
-        xlr.onreadystatechange = this.readResponse.bind(_this, tabId);
+        xlr.onreadystatechange = this.readResponse.bind(_this, senderType, tabId);
+        xlr.onerror = function(err) {
+            console.error('Error', err.target.status);
+        };
 
         try {
             xlr.open(method, url, true);
@@ -35,7 +38,7 @@ ChURL.prototype = {
         }
         catch (e) {
             // Fill me
-            console.log(e);
+            console.log('---exeption', e);
 
         }
         return false;
@@ -48,7 +51,7 @@ ChURL.prototype = {
      * https://developer.chrome.com/extensions/devtools
      * @param tabId
      */
-    readResponse: function (tabId, event) {
+    readResponse: function (senderType, tabId, event) {
         //console.log('background::readResponse()', arguments);
         var resp = {
             'readyState': event.target.readyState
@@ -78,7 +81,7 @@ ChURL.prototype = {
                 resp.data = JSON.parse(resp.responseText);
             }
 
-            console.log('ChURL got response', resp);
+            console.log('ChURL got response.status:', resp.status);
 
             resp.tabId = tabId;
 
@@ -90,14 +93,27 @@ ChURL.prototype = {
                 from: 'ChURL'
             };
 
-            if (typeof page !== 'undefined' && undefined !== page) {
-                page.notifyDevtools(messageData);
-            //}
-            //else {
-            //    console.log('Response should be sent to devTools', messageData);
+            if(senderType === 'devtool') {
+                if (typeof page !== 'undefined' && undefined !== page) {
+                    page.notifyDevtools(messageData, tabId);
+                }
 
+            }
+            else if(senderType === 'page') {
+                if (typeof page !== 'undefined' && undefined !== page) {
+                    page.notifyPage(messageData, tabId);
+                }
+            }
+            else if(senderType === 'panel') {
+                if (typeof page !== 'undefined' && undefined !== page) {
+                    page.notifyPanel(messageData, tabId);
+                }
             }
 
         }
+    },
+
+    init: function() {
+        console.log('ChURL lib initiation ...');
     }
 };

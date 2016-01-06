@@ -2,11 +2,11 @@
 
 // http://stackoverflow.com/questions/11661613/chrome-devpanel-extension-communicating-with-background-page/11677744#11677744
 
-    "name":"debugPanel",
-    "description":"Makes HTTP request",
+    "name":"chURL :: request creator",
+    "description":"Makes HTTP(s) request",
     "manifest_version":2,
     "version":"1.0",
-    "minimum_chrome_version": "10.0",
+    "minimum_chrome_version": "40.0",
 
     "icons": {
         "16": "images/icon16.png",
@@ -20,7 +20,6 @@
     },
 
     "devtools_page":"html/devtools.html",
-    //    "devtools_page": "html/panel.html"
     "background":{
         "scripts":[
             "js/background.js",
@@ -43,8 +42,14 @@
             ],
             "run_at": "document_start"
         }
-    ]
+    ],
 
+    "externally_connectable": {
+        "matches": [
+            "chrome-extension://miefnlfpbpkndiegjaomaikeplobbofo/html/panel.html"
+
+        ]
+    }
 //    , "options_page": "html/panel.html"
 
 }

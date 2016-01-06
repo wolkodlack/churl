@@ -62,7 +62,8 @@ var devPanelCallback = function (extensionPanel) {
     };
 
     var dataPool = [];
-    var port = chrome.extension.connect({name: "devtools"});
+    var port = chrome.extension.connect({name: "devtools."+ chrome.devtools.inspectedWindow.tabId});
+    //var port = chrome.runtime.connect({name: "devtools."+ chrome.devtools.inspectedWindow.tabId});
 
     port.onMessage.addListener(function (data) {
         _log('devtools::onDevtoolMessage()', data);
@@ -100,19 +101,17 @@ var devPanelCallback = function (extensionPanel) {
 
             var requestData = {
                 initiator: initiator,
+                senderType: 'devtool',
+                tabId: chrome.devtools.inspectedWindow.tabId,
                 command: "sendRequest",
 
                 method: method,
                 url: url,
                 headers: headers,
-                data: data,
-                tabId: chrome.devtools.inspectedWindow.tabId
+                data: data
 
             };
-            _log('doRequest()', requestData);
-            //port.postMessage('request is DONE');
 
-            //chrome.extension.sendRequest(requestData);
             chrome.runtime.sendMessage(requestData, function(response) {
                 _log(response);
             });
@@ -124,14 +123,24 @@ var devPanelCallback = function (extensionPanel) {
 };
 
 //// Panel for dev-tools -------------------------------------------------------------------------------------------
+
+
 if(chrome.devtools.inspectedWindow.tabId !== undefined ) {
     _log('creating Requester panel for tabId=' + chrome.devtools.inspectedWindow.tabId);
-    chrome.devtools.panels.create(
-        "Requester",
-        "../images/devtool_icon.png",
-        "../html/panel.html",
-        devPanelCallback
-    );
+    // Should not be available on extension tabs
+    chrome.devtools.inspectedWindow.eval('document.location.protocol', {}, function(result, exceptionInfo){
+        _log('window location#####', arguments);
+        if(result !== "chrome-extension:") {
+            chrome.devtools.panels.create(
+                "Requester",
+                "../images/devtool_icon.png",
+                "../html/panel.html",
+                devPanelCallback
+            );
+        }
+    });
+
+
 }
 
 

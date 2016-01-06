@@ -21,7 +21,22 @@ function gotResponce(data) {
 //    chrome.tabs.create({url: extension_url});
 //};
 
+function loadScript(url, callback)
+{
+    // Adding the script tag to the head as suggested before
+    var head = document.getElementsByTagName('head')[0];
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = url;
 
+    // Then bind the event to the callback function.
+    // There are several events for cross browser compatibility.
+    script.onreadystatechange = callback;
+    script.onload = callback;
+
+    // Fire the loading
+    head.appendChild(script);
+}
 
 // ------------------------------------------------------------------------
 
@@ -74,12 +89,15 @@ function grow(a) {
     b.style.height = c + "px"
 }
 
+function setStatus(status) {
+    $("#responseStatus").html(status);
+}
 
 function clearFields() {
     $("#response").css("display", "");
     $("#loader").css("display", "");
     $("#responsePrint").css("display", "none");
-    $("#responseStatus").html("");
+    setStatus("");
     $("#responseHeaders").val("");
     $("#codeData").text("");
     $("#responseHeaders").height(20);
@@ -122,9 +140,7 @@ function sendRequest() {
     //clearFields();
     if (url != "") {
         var method = $("input[name=method][type=radio]:checked").val();
-        contentConsoleLog('Method', method);
         var initialPage = $("input[name=initialPage][type=radio]:checked").val();
-        contentConsoleLog('initialPage', initialPage);
 
         var postPutData = '';
 
@@ -138,9 +154,8 @@ function sendRequest() {
         contentConsoleLog(msg + ' <'+ url+ '>', msgData );
 
         // Executing function from devtools.js
-        var r = false;
         if(undefined !== window.doRequest) {
-            r = doRequest(
+            doRequest(
                 initialPage,
                 method,
                 url,
@@ -149,18 +164,19 @@ function sendRequest() {
             );
         }
         else {
-            contentConsoleLog('not found "doRequest()" function');
+            page.doLocalRequest(
+                initialPage,
+                method,
+                url,
+                $("#headers").val(),
+                postPutData
+            );
         }
 
-        if(!r) {
-            $("#responseStatus").html('<span style="color:#FF0000">bad_request</span>');
-            $("#respHeaders").css("display", "none");
-            $("#respData").css("display", "none");
-            $("#loader").css("display", "none");
-            $("#responsePrint").css("display", "")
-        }
-    } else {
-        $("#responseStatus").html('<span style="color:#FF0000">bad_request</span>');
+    }
+    else {
+        setStatus('<span style="color:#FF0000">bad_request</span>');
+
         $("#respHeaders").css("display", "none");
         $("#respData").css("display", "none");
         $("#loader").css("display", "none");
@@ -170,100 +186,63 @@ function sendRequest() {
 
 
 
+
 function readResponse(resp) {
     contentConsoleLog('readResponse', resp);
 
     grow("headers");
     grow("postputdata");
 
-    if (resp.readyState == 4) {
-//    try {
-//        alert(this.status + " " + statusCodes[this.status]);
-        if (resp.status == 0)   throw "Status = 0";
 
-        $("#responseStatus").html(resp.status + " " + statusCodes[resp.status]);
-        $("#responseHeaders").val(jQuery.trim(resp.headers));
+    try {
+        if (resp.readyState == 4) {
+            if (resp.status == 0)   throw "Status = 0";
+
+            setStatus(resp.status + " " + statusCodes[resp.status]);
+
+            $("#responseHeaders").val(jQuery.trim(resp.headers));
 
 
-        var a = /X-Debug-URL: (.*)/i.exec($("#responseHeaders").val());
-        if (a) {
-            $("#debugLink").attr("href", a[1]).html(a[1]);
-            $("#debugLinks").css("display", "")
+            var a = /X-Debug-URL: (.*)/i.exec($("#responseHeaders").val());
+            if (a) {
+                $("#debugLink").attr("href", a[1]).html(a[1]);
+                $("#debugLinks").css("display", "")
+            }
+            $("#codeData").html(
+                jQuery
+                    .trim(resp.responseText)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g,"&gt;")
+            );
+            $("#respHeaders").css("display", "");
+            $("#respData").css("display", "");
+            $("#loader").css("display", "none");
+            $("#responsePrint").css("display", "");
+            $("#response").css("display", "");
+            grow("responseHeaders");
+            ChiliBook.automatic = false;
+            contentConsoleLog('chili', ChiliBook);
+            //$.chili.options.automatic.active = false;
+            //$.chili.options.decoration.lineNumbers = false;
+            $("#codeData").chili();
         }
-        $("#codeData").html(
-            jQuery
-                .trim(resp.responseText)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g,"&gt;")
-        );
-        $("#respHeaders").css("display", "");
-        $("#respData").css("display", "");
+    } catch (e) {
+        contentConsoleLog('Exception', e.name + "::" + e.message);
+        setStatus("No response.");
+        $("#respHeaders").css("display", "none");
+        $("#respData").css("display", "none");
         $("#loader").css("display", "none");
-        $("#responsePrint").css("display", "");
-        $("#response").css("display", "");
-        grow("responseHeaders");
-        ChiliBook.automatic = false;
-        $.chili.options.automatic.active = false;
-        $.chili.options.decoration.lineNumbers = false;
-        $("#codeData").chili();
+        $("#responsePrint").css("display", "")
     }
-//    } catch (b) {
-//        $("#responseStatus").html("No response.");
-//        $("#respHeaders").css("display", "none");
-//        $("#respData").css("display", "none");
-//        $("#loader").css("display", "none");
-//        $("#responsePrint").css("display", "")
-//    }
 }
+
 function toggleData() {
     jQuery.inArray($("input[type=radio]:checked").val(), ["post", "put"]) > -1 ? $("#data").css("display", "") : $("#data").css("display", "none")
 }
-function init() {
-    $("#url").width($("#purl").width() - 80 - 30);
-    $("#headers").width($("#pheaders").width() - 80 - 30);
-    $("#postputdata").width($("#data").width() - 80 - 30);
-    $("#responseHeaders").width($("#respHeaders").width() - 80 - 30);
-    $("#responseData").width($("#respHeaders").width() - 80 - 30);
-//    $("#response").css("display", "none");
-    $("#loader").css("display", "");
-    $("#responsePrint").css("display", "none");
-    $("#sep").css("display", "none");
-    $("#data").css("display", "none");
-    $("#responseStatus").html("");
-    $("#respHeaders").css("display",
-        "none");
-    $("#respData").css("display", "none");
-    $("#submit").click(function () {
-        sendRequest();
-        return false
-    });
-    $("#reset").click(function () {
-        location.reload()
-    });
-    $(".radio").change(function () {
-        toggleData()
-    });
-    $(".radio").focus(function () {
-        toggleData()
-    })
-}
 
-// create the port
-if(chrome.extension) {
-    var port = chrome.extension.connect({name: 'panel'});
 
-    // keep track of the port and tab id on the background by
-    // sending the inspected windows tab id
-    port.postMessage(['connect', '??WTF??']);
-    var onMessage = function (data) {
-        if(data.tabId === chrome.devtools.inspeictedWindow.tabId) {
-            panelLog('panel::onMessage()', JSON.stringify(data));
 
-        }
-    };
-    port.onMessage.addListener(onMessage);
-}
 
 
 
@@ -279,8 +258,135 @@ if(chrome.extension) {
 //}
 
 
+var ChURLPage = function () {
+    this.init();
+};
+
+ChURLPage.prototype = {
+    tabId: undefined,
+
+    doLocalRequest: function(initiator, method, url, headers, data) {
+            contentConsoleLog('Sending message from page');
+            var requestData = {
+                initiator: initiator,
+                senderType: 'page',
+                tabId: this.tabId,
+                command: "sendRequest",
+
+                method: method,
+                url: url,
+                headers: headers,
+                data: data
+            };
+            //chrome.runtime.sendMessage(dataRec);
+
+            var editorExtensionId = "miefnlfpbpkndiegjaomaikeplobbofo";
+
+            chrome.runtime.sendMessage(requestData, function(response) {
+                contentConsoleLog('response', response);
+                if('ok' === response) {
+                    contentConsoleLog('send ok');
+
+                }
+            });
+
+            // Make a simple request:
+            //chrome.runtime.sendMessage(editorExtensionId, dataRec,
+            //    function(response) {
+            //        console.log('response', response);
+            //        if('ok' === response) {
+            //            contentConsoleLog('send ok');
+            //
+            //        }
+            //
+            //    });
+
+    },
+
+    initPort: function() {
+        if(chrome.extension) {
+            var panelLocation = 'page';
+            if(undefined !== chrome.devtools){
+                panelLocation = 'panel.' + this.tabId;
+            }
+
+            var port = chrome.extension.connect({name: panelLocation});
+
+            // keep track of the port and tab id on the background by
+            // sending the inspected windows tab id
+            port.postMessage(['connect', '??WTF??']);
+            var onMessage = function (data) {
+                contentConsoleLog('panel::onMessage()', data);
+                if(data.command === 'gotResponce') {
+                    gotResponce(data.data);
+                }
+                if(chrome.devtools && data.tabId === chrome.devtools.inspectedWindow.tabId) {
+
+
+                }
+            };
+            port.onMessage.addListener(onMessage);
+        }
+    },
+
+    init: function() {
+        if(undefined !== chrome.tabs) {
+            chrome.tabs.getCurrent(function(tab) {
+                contentConsoleLog('tabs.gutCurrent()', arguments);
+                this.tabId = tab.id;
+                this.initPort();
+            }.bind(this));
+        }
+        else if(undefined !== chrome.devtools.inspectedWindow){
+            this.tabId = chrome.devtools.inspectedWindow.tabId;
+            this.initPort();
+        }
+
+        this.senderType = (undefined !== window.doRequest)?'devtools':'page';
+        if(this.senderType==='page') {
+            // TODO: Content request is not available. No content script are given
+            $('label[for=content]').css('display', 'none');
+        }
+
+
+        contentConsoleLog('init churl page..');
+        $("#url").width($("#purl").width() - 80 - 30);
+        $("#headers").width($("#pheaders").width() - 80 - 30);
+        $("#postputdata").width($("#data").width() - 80 - 30);
+        $("#responseHeaders").width($("#respHeaders").width() - 80 - 30);
+        $("#responseData").width($("#respHeaders").width() - 80 - 30);
+        $("#response").css("display", "none");
+
+        $("#loader").css("display", "");
+        $("#responsePrint").css("display", "none");
+        $("#sep").css("display", "none");
+        $("#data").css("display", "none");
+        $("#responseStatus").html("");
+        $("#respHeaders").css("display",
+            "none");
+        $("#respData").css("display", "none");
+        $("#submit").click(function () {
+            sendRequest();
+            return false
+        });
+        $("#reset").click(function () {
+            location.reload()
+        });
+        $(".radio").change(function () {
+            toggleData()
+        });
+        $(".radio").focus(function () {
+            toggleData()
+        });
+
+    }
+};
+
+var page;
 $(document).ready(function () {
 //    lang();
-    init();
+
+    page = new ChURLPage();
+
     $(":input:first").focus();
 });

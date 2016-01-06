@@ -32,19 +32,21 @@ Background.prototype = {
         }
         else if('gotResponce' == message.command) {
             console.info('Forwarding to devtools ...', message);
-            this.notifyDevtools(message);
+            this.notifyDevtools(message, message.tabId);
         }
         else if(message.initiator === 'content') {
             console.log('Forwarding to content script...');
             this.sendToContent(message);
         }
         else if(message.command === 'sendRequest' && message.initiator === 'background') {
+            console.log('backgound::churl.doRequest()', sender, message);
             var churl = new ChURL();
             churl.doRequest(
                 message.method,
                 message.url,
                 message.headers,
                 message.data,
+                message.senderType,
                 message.tabId
             );
             sendResponse('Request is sent');
@@ -88,8 +90,10 @@ Background.prototype = {
     },
 
     sendToContent: function(data) {
+
         chrome.tabs.query({'active': true,'currentWindow': true},
             function (tabs) {
+                console.log('TABS: ', tabs);
                 // Send message to content script
                 if (tabs[0]) {
                     console.log('background::sendToContent()', data);
@@ -103,14 +107,68 @@ Background.prototype = {
     ports: [],
 
     // Function to send a message to all devtool.html views:
-    notifyDevtools: function(data) {
-        console.log('background::notifyDevtools()', 'port count: ' + this.ports.length);
-        Object.keys(this.ports).forEach(function(portId_) {
-            console.log('backgground::Sending to '+ this.ports[portId_].name);
-            this.ports[portId_].postMessage(data);
-        }.bind(this));
+    notifyDevtools: function(data, tabId) {
+        var onPort = function(portId_) {
+            console.log('port[' + this.ports[portId_].name + ']', this.ports[portId_]);
+            if(
+                this.ports[portId_].name === ('devtools.' + tabId)
+            ) {
+                console.log('backgground::Sending to (:' +portId_+ ') '+ this.ports[portId_].name);
+                this.ports[portId_].postMessage(data);
+            }
+        }.bind(this);
+        Object.keys(this.ports).forEach(onPort);
     },
 
+    // Function to send a message to all devtool.html views:
+    notifyPage: function(data, tabId) {
+        console.log('background::notifyPage() tabId: ', tabId);
+        var onPort = function(portId_) {
+            //console.log('port[' + this.ports[portId_].name + ']', this.ports[portId_]);
+            if(
+                this.ports[portId_].sender.tab !== undefined
+                &&
+                this.ports[portId_].sender.tab.id === tabId
+                &&
+                this.ports[portId_].name === 'page'
+            ) {
+                console.log('background::Sending to (:' +portId_+ ') '+ this.ports[portId_].name);
+                this.ports[portId_].postMessage(data);
+            }
+
+
+        }.bind(this);
+        Object.keys(this.ports).forEach(onPort);
+    },
+
+    // TODO: To be emplemented
+    notifyPanel: function(data, tabId) {
+
+    },
+
+    runtimeOnMessageExternal: function(request, sender, sendResponse) {
+        console.log('background::runtimeOnMessageExternal()', arguments);
+        if (sender.url == 'http://<blacklisted.here>')
+            return;  // don't allow this web page access
+
+
+        if(request.initiator === 'content') {
+            console.log('Forwarding to content script...');
+            this.sendToContent(request);
+        }
+        else if(request.command === 'sendRequest' && request.initiator === 'background') {
+            var churl = new ChURL();
+            churl.doRequest(
+                request.method,
+                request.url,
+                request.headers,
+                request.data,
+                request.tabId
+            );
+            sendResponse('ok');
+        }
+
+    },
 
     init: function() {
         chrome.runtime.onMessage.addListener( this.runtimeOnMessage.bind(this) );
@@ -129,14 +187,14 @@ Background.prototype = {
             port.onMessage.addListener(this.portOnMessage.bind(this, port));
         };
         chrome.extension.onConnect.addListener(onPortConnect.bind(this));
+
+
+        chrome.runtime.onMessageExternal.addListener(this.runtimeOnMessageExternal.bind(this));
     }
 };
 
 
 var page = new Background();
-
-page.notifyDevtools('notifyDevtools(-- test message from background --)');
-
 
 
 
