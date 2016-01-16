@@ -5,7 +5,7 @@ function gotResponce(data) {
         status: data.status
     };
     panelLog('panel::gotResponce()', JSON.stringify(responseInfo));
-    readResponse(data);
+    page.readResponse(data);
 }
 
 //
@@ -187,55 +187,6 @@ function sendRequest() {
 
 
 
-function readResponse(resp) {
-    contentConsoleLog('readResponse', resp);
-
-    grow("headers");
-    grow("postputdata");
-
-
-    try {
-        if (resp.readyState == 4) {
-            if (resp.status == 0)   throw "Status = 0";
-
-            setStatus(resp.status + " " + statusCodes[resp.status]);
-
-            $("#responseHeaders").val(jQuery.trim(resp.headers));
-
-
-            var a = /X-Debug-URL: (.*)/i.exec($("#responseHeaders").val());
-            if (a) {
-                $("#debugLink").attr("href", a[1]).html(a[1]);
-                $("#debugLinks").css("display", "")
-            }
-            $("#codeData").html(
-                jQuery
-                    .trim(resp.responseText)
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g,"&gt;")
-            );
-            $("#respHeaders").css("display", "");
-            $("#respData").css("display", "");
-            $("#loader").css("display", "none");
-            $("#responsePrint").css("display", "");
-            $("#response").css("display", "");
-            grow("responseHeaders");
-            ChiliBook.automatic = false;
-            contentConsoleLog('chili', ChiliBook);
-            //$.chili.options.automatic.active = false;
-            //$.chili.options.decoration.lineNumbers = false;
-            $("#codeData").chili();
-        }
-    } catch (e) {
-        contentConsoleLog('Exception', e.name + "::" + e.message);
-        setStatus("No response.");
-        $("#respHeaders").css("display", "none");
-        $("#respData").css("display", "none");
-        $("#loader").css("display", "none");
-        $("#responsePrint").css("display", "")
-    }
-}
 
 function toggleData() {
     jQuery.inArray($("input[type=radio]:checked").val(), ["post", "put"]) > -1 ? $("#data").css("display", "") : $("#data").css("display", "none")
@@ -355,7 +306,13 @@ ChURLPage.prototype = {
         $("#postputdata").width($("#data").width() - 80 - 30);
         $("#responseHeaders").width($("#respHeaders").width() - 80 - 30);
         $("#responseData").width($("#respHeaders").width() - 80 - 30);
-        $("#response").css("display", "none");
+        //$("#response fieldset").addClass('fold');  //  .css("display", "none");
+        this.showRequest(true);
+
+        this.showLog(false);
+        this.showResponse(false);
+        this.showSettings(false);
+
 
         $("#loader").css("display", "");
         $("#responsePrint").css("display", "none");
@@ -379,7 +336,143 @@ ChURLPage.prototype = {
             toggleData()
         });
 
+        $('.tabList legend input[type=checkbox]').click(onExpand);
+
+    },
+
+
+    readResponse: function(resp) {
+        contentConsoleLog('readResponse', resp);
+
+        grow("headers");
+        grow("postputdata");
+
+
+        try {
+            if (resp.readyState == 4) {
+                if (resp.status == 0)   throw "Status = 0";
+
+                setStatus(resp.status + " " + statusCodes[resp.status]);
+
+                $("#responseHeaders").val(jQuery.trim(resp.headers));
+
+
+                var a = /X-Debug-URL: (.*)/i.exec($("#responseHeaders").val());
+                if (a) {
+                    $("#debugLink").attr("href", a[1]).html(a[1]);
+                    $("#debugLinks").css("display", "")
+                }
+                $("#codeData").html(
+                    jQuery
+                        .trim(resp.responseText)
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g,"&gt;")
+                );
+                $("#respHeaders").css("display", "");
+                $("#respData").css("display", "");
+                $("#loader").css("display", "none");
+                $("#responsePrint").css("display", "");
+                //$("#response fieldset").removeClass('fold');     //.css("display", "");
+                this.showResponse();
+                this.showRequest(false);
+
+                grow("responseHeaders");
+                ChiliBook.automatic = false;
+                contentConsoleLog('chili', ChiliBook);
+                //$.chili.options.automatic.active = false;
+                //$.chili.options.decoration.lineNumbers = false;
+                $("#codeData").chili();
+            }
+        } catch (e) {
+            contentConsoleLog('Exception', e.name + "::" + e.message);
+            setStatus("No response.");
+            $("#respHeaders").css("display", "none");
+            $("#respData").css("display", "none");
+            $("#loader").css("display", "none");
+            $("#responsePrint").css("display", "")
+        }
+    },
+
+    showRequest: function(show) {
+        var logFieldset = $("#request fieldset");
+        var cb = $('#request legend input[type=checkbox]');
+        if(show===undefined || show===true) {
+            logFieldset.removeClass('fold');
+            cb.prop('checked', true);
+        }
+        else {
+            logFieldset.addClass('fold');  //  .css("display", "none");
+            cb.prop('checked', false);
+        }
+
+    },
+    showLog: function(show) {
+        var logFieldset = $("#log fieldset");
+        var cb = $('#log legend input[type=checkbox]');
+        if(show===undefined || show===true) {
+            logFieldset.removeClass('fold');
+            cb.prop('checked', true);
+        }
+        else {
+            logFieldset.addClass('fold');
+            cb.prop('checked', false);
+        }
+
+    },
+
+    showResponse: function(show) {
+        console.log('showResponse', arguments);
+        var logFieldset = $("#response fieldset");
+        var cb = $('#response legend input[type=checkbox]');
+        if(show===undefined || show===true) {
+            logFieldset.removeClass('fold');
+            cb.prop('checked', true);
+        }
+        else {
+            logFieldset.addClass('fold');  //  .css("display", "none");
+            cb.prop('checked', false);
+        }
+
+    },
+
+    showSettings: function(show) {
+        console.log('showResponse', arguments);
+        var logFieldset = $("#settings fieldset");
+        var cb = $('#settings legend input[type=checkbox]');
+        if(show===undefined || show===true) {
+            logFieldset.removeClass('fold');
+            cb.prop('checked', true);
+        }
+        else {
+            logFieldset.addClass('fold');  //  .css("display", "none");
+            cb.prop('checked', false);
+        }
+
     }
+};
+
+var onExpand = function (event) {
+    var cb = event.target;
+    console.log('onExpand', event, cb);
+    var isShow = $(cb).prop('checked');
+
+    var section = $(cb).parent().parent();
+    var fieldset = section.find('fieldset');
+    switch( section.attr('id') ){
+        case 'request':
+            page.showRequest(isShow);
+            break;
+        case 'log':
+            page.showLog(isShow);
+            break;
+        case 'response':
+            page.showResponse(isShow);
+            break;
+        default :
+            fieldset.toggleClass('fold');
+    }
+
 };
 
 var page;

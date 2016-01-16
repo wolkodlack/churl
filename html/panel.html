@@ -4,23 +4,31 @@
     <meta charset="utf-8"/>
     <title>ChURL REST Client</title>
     <link href="../html/panel.css" rel="stylesheet" type="text/css">
+    <link href="../html/tabs.css" rel="stylesheet" type="text/css">
 
     <script type="text/javascript" src="../js/jquery-2.0.1.js"></script>
     <script type="text/javascript" src="../js/chili/jquery.chili-2.2.js"></script>
     <script type="text/javascript" src="../js/chili/recipes.js"></script>
 
     <script src="../js/panel.js"></script>
+
 </head>
 
 
-<body>
+<body class="tabList">
     <section id="request">
-        <fieldset>
-            <legend class="_msg_">request
-                <label class="labelvert" for="background"><input  class="radio" type="radio" value="background" name="initialPage" id="bg" tabindex="2" checked="" > background</label>
-                <label class="labelvert" for="content"><input class="radio" type="radio" value="content"    name="initialPage" id="cn" tabindex="2"> content</label>
+        <legend class="_msg_">
+            <input type="checkbox" name="tabstrip-0" id="tabstrip-0-0"/>
+            <label for="tabstrip-0-0">Request</label>
 
-            </legend>
+
+            <label class="labelvert" for="background"><input  class="radio" type="radio" value="background" name="initialPage" id="bg" tabindex="2" checked="" > background</label>
+            <label class="labelvert" for="content"><input class="radio" type="radio" value="content"    name="initialPage" id="cn" tabindex="2"> content</label>
+
+        </legend>
+
+        <fieldset>
+
             <div>
             <p id="purl">
                 <input type="text" name="url" id="url" tabindex="1"
@@ -53,11 +61,17 @@
             </p>
             </div>
         </fieldset>
+
     </section>
 
     <section id="log">
+        <legend class="_msg_">
+            <input type="checkbox" id="tabItem-1"/>
+            <label>Logging</label>
+        </legend>
+
         <fieldset>
-            <legend class="_msg_">logging</legend>
+
             <div id="responseLog"></div>
         </fieldset>
     </section>
@@ -65,8 +79,14 @@
 
 
     <section id="response">
+        <legend class="_msg_">
+            <input type="checkbox" id="tabItem-0-2" />
+            <label>Response</label>
+
+        </legend>
+
         <fieldset>
-            <legend class="_msg_">response</legend>
+
             <div id="loader" class="_msg_">processing</div>
             <div id="responsePrint">
                 <p id="pstatus">
@@ -88,6 +108,29 @@
                     </div>
                 </div>
             </div>
+
+        </fieldset>
+    </section>
+
+    <section id="settings">
+        <legend class="_msg_">
+            <input type="checkbox" name="cbSettings"/>
+            <label for="cbSettings">Settings</label>
+        </legend>
+        <fieldset>
+            <p>
+                <label>Load URL preset</label>
+                <select>
+                    <option value="">none</option>
+                </select>
+            </p>
+
+            <p>
+                <label>Save URL Preset</label>
+                <input type="text" />
+            </p>
+
+
 
         </fieldset>
     </section>
